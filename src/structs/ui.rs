@@ -12,11 +12,51 @@ impl UI {
 	}
 
 	pub fn init(&self, credentials_arr: &mut Vec<(String, String, String)>) {
+        self.window.clear();
 		self.window.keypad(true);
 		noecho();
 
 		self.draw_vaults_menu(credentials_arr);
 	}
+
+    pub fn insert_mode(&self) {
+        let mut credential_name: Vec<char> = Vec::new();
+        self.window.clear();
+
+        self.window.mvaddstr(0, 0, "Insert your credential name:");
+        self.window.mv(1, 0);
+
+        loop {
+            let user_input = self.await_user_input();
+
+            match user_input {
+                Input::Character('\n') => {
+                    break;
+                }
+                Input::Character(c) => {
+                    self.window.addch(c);
+                    credential_name.push(c);
+                }
+                Input::KeyBackspace => {
+                    credential_name.pop();
+                    self.window.mv(self.window.get_cur_y(), self.window.get_cur_x() - 1);
+                    self.window.delch();
+                }
+                _ => {}
+            }
+        }
+
+
+    }
+    
+    pub fn await_user_input(&self) -> Input {
+		let user_input = self.window.getch().unwrap();
+		user_input
+	}
+
+    fn move_cursor_max(&self) {
+        self.window.mv(self.window.get_max_y() - 1, self.window.get_max_x() - 1);
+    }
 
 	fn draw_vaults_menu(&self, credentials_arr: &mut Vec<(String, String, String)>) {
 		let is_credentials_file_created = Path::new("credentials.txt").exists();
@@ -37,16 +77,22 @@ impl UI {
 		self.window.mvaddstr(0, 0, "Vault:");
 
 		if credentials_arr.is_empty() {
-			self.window.mvaddstr(2, 0, "None credentials have been found.");
+			self.window.mvaddstr(1, 0, "None credentials have been found.");
 		} else {
 			for (index, item) in credentials_arr.iter().enumerate() {
-				self.window.mvaddstr((index + 2) as i32, 0, &item.0);
+				self.window.mvaddstr((index + 1) as i32, 0, &item.0);
 			}
 		}
+
+        self.draw_controls();
+        self.move_cursor_max();
 	}
 
-	pub fn await_user_input(&self) -> Input {
-		let user_input = self.window.getch().unwrap();
-		user_input
-	}
+    fn draw_controls(&self) {
+        let max_y_terminal = self.window.get_max_y() - 1;
+
+        self.window.mvaddstr(max_y_terminal, 0, "[w a s d: navigation]");
+        self.window.mvaddstr(max_y_terminal, 22, "[i: insert new credential]");
+        self.window.mvaddstr(max_y_terminal, 49, "[q: exit]");
+    }
 }
