@@ -2,6 +2,8 @@ use pancurses::{noecho, Window, Input};
 use std::fs::{self};
 use std::path::Path;
 
+use super::credentials::Credential;
+
 pub struct UI {
 	window: Window
 }
@@ -11,7 +13,7 @@ impl UI {
 		Self { window }
 	}
 
-	pub fn init(&self, credentials_arr: &mut Vec<(String, String, String)>) {
+	pub fn init(&self, credentials_arr: &mut Vec<Credential>) {
         self.window.clear();
 		self.window.keypad(true);
 		noecho();
@@ -19,7 +21,7 @@ impl UI {
 		self.draw_vaults_menu(credentials_arr);
 	}
 
-    pub fn insert_mode(&self) {
+    pub fn insert_credential_name(&self) {
         let mut credential_name: Vec<char> = Vec::new();
         self.window.clear();
 
@@ -45,8 +47,6 @@ impl UI {
                 _ => {}
             }
         }
-
-
     }
     
     pub fn await_user_input(&self) -> Input {
@@ -58,7 +58,7 @@ impl UI {
         self.window.mv(self.window.get_max_y() - 1, self.window.get_max_x() - 1);
     }
 
-	fn draw_vaults_menu(&self, credentials_arr: &mut Vec<(String, String, String)>) {
+	fn draw_vaults_menu(&self, credentials_arr: &mut Vec<Credential>) {
 		let is_credentials_file_created = Path::new("credentials.txt").exists();
 		if is_credentials_file_created {
 			let file_buf = fs::read_to_string("credentials.txt").unwrap();
@@ -66,11 +66,12 @@ impl UI {
 			for line in file_buf.lines() {
 				let mut chunk = line.split(';');
 
-				let vault_name = chunk.next().unwrap().to_string();
-				let vault_user = chunk.next().unwrap().to_string();
-				let vault_password = chunk.next().unwrap().to_string();
+				let credential_name = chunk.next().unwrap().to_string();
+				let credential_user = chunk.next().unwrap().to_string();
+				let credential_password = chunk.next().unwrap().to_string();
 
-				credentials_arr.push((vault_name, vault_user, vault_password));
+                let credential = Credential::new(credential_name, credential_user, credential_password);
+                credentials_arr.push(credential);
 			}
 		}
 
@@ -80,7 +81,7 @@ impl UI {
 			self.window.mvaddstr(1, 0, "None credentials have been found.");
 		} else {
 			for (index, item) in credentials_arr.iter().enumerate() {
-				self.window.mvaddstr((index + 1) as i32, 0, &item.0);
+				self.window.mvaddstr((index + 1) as i32, 0, &item.name);
 			}
 		}
 

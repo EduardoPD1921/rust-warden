@@ -2,11 +2,12 @@ mod structs;
 
 use pancurses::*;
 use structs::ui::UI;
+use structs::credentials::*;
 fn main() {
     let window = initscr();
     let ui = UI::new(window);
     
-    let mut credentials_arr: Vec<(String, String, String)> = Vec::new();
+    let mut credentials_arr: Vec<Credential> = Vec::new();
     
     loop {
         ui.init(&mut credentials_arr);
@@ -17,7 +18,7 @@ fn main() {
                 break;
             }
             Input::Character('i') => {
-                ui.insert_mode();
+                ui.insert_credential_name();
             }
             _ => {}
         }
