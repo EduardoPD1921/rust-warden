@@ -5,7 +5,7 @@ use structs::ui::UI;
 use structs::credentials::*;
 fn main() {
     let window = initscr();
-    let ui = UI::new(window);
+    let mut ui = UI::new(window);
     
     let mut credentials_arr: Vec<Credential> = Vec::new();
     
@@ -18,7 +18,7 @@ fn main() {
                 break;
             }
             Input::Character('i') => {
-                ui.insert_credential_name();
+                ui.create_credential_mode();
             }
             _ => {}
         }

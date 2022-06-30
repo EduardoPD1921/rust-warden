@@ -3,14 +3,18 @@ use std::fs::{self};
 use std::path::Path;
 
 use super::credentials::Credential;
-
 pub struct UI {
-	window: Window
+	window: Window,
+    credential_name: Option<String>,
+    credential_user: Option<String>,
+    credential_password: Option<String>
 }
 
+
 impl UI {
+
 	pub fn new(window: Window) -> Self {
-		Self { window }
+		Self { window, credential_name: None, credential_user: None, credential_password: None }
 	}
 
 	pub fn init(&self, credentials_arr: &mut Vec<Credential>) {
@@ -21,32 +25,11 @@ impl UI {
 		self.draw_vaults_menu(credentials_arr);
 	}
 
-    pub fn insert_credential_name(&self) {
-        let mut credential_name: Vec<char> = Vec::new();
+    pub fn create_credential_mode(&mut self) {
         self.window.clear();
 
-        self.window.mvaddstr(0, 0, "Insert your credential name:");
-        self.window.mv(1, 0);
-
-        loop {
-            let user_input = self.await_user_input();
-
-            match user_input {
-                Input::Character('\n') => {
-                    break;
-                }
-                Input::Character(c) => {
-                    self.window.addch(c);
-                    credential_name.push(c);
-                }
-                Input::KeyBackspace => {
-                    credential_name.pop();
-                    self.window.mv(self.window.get_cur_y(), self.window.get_cur_x() - 1);
-                    self.window.delch();
-                }
-                _ => {}
-            }
-        }
+        self.insert_credential_name_screen();
+        self.window.getch();
     }
     
     pub fn await_user_input(&self) -> Input {
@@ -95,5 +78,66 @@ impl UI {
         self.window.mvaddstr(max_y_terminal, 0, "[w a s d: navigation]");
         self.window.mvaddstr(max_y_terminal, 22, "[i: insert new credential]");
         self.window.mvaddstr(max_y_terminal, 49, "[q: exit]");
+    }
+
+    fn insert_credential_name_screen(&mut self) {
+        let mut credential_name_arr: Vec<char> = Vec::new();
+
+        self.window.mvaddstr(0, 0, "Insert your credential name:");
+        self.window.mv(1, 0);
+
+        loop {
+            let user_input = self.await_user_input();
+
+            match user_input {
+                Input::Character('\n') => {
+                    break;
+                }
+                Input::Character(c) => {
+                    self.window.addch(c);
+                    credential_name_arr.push(c);
+                }
+                Input::KeyBackspace => {
+                    credential_name_arr.pop();
+                    self.window.mv(self.window.get_cur_y(), self.window.get_cur_x() - 1);
+                    self.window.delch();
+                }
+                _ => {}
+            }
+        }
+
+        let credential_name = credential_name_arr.iter().collect();
+        self.credential_name = Some(credential_name);
+        self.draw_inserted_parameters();
+    }
+
+    fn draw_inserted_parameters(&self) {
+        let mut text_y = 0;
+
+        match &self.credential_name {
+            Some(n) => {
+                let inserted_name = format!("Credential name: {}", n);
+                self.window.mvaddstr(text_y, 0, inserted_name);
+                text_y += 1;
+            }
+            None => {}
+        }
+
+        match &self.credential_user {
+            Some(u) => {
+                let inserted_user = format!("Credential user: {}", u);
+                self.window.mvaddstr(text_y, 0, inserted_user);
+                text_y += 1;
+            }
+            None => {}
+        }
+
+        match &self.credential_password {
+            Some(p) => {
+                let inserted_password = format!("Credential password: {}", p);
+                self.window.mvaddstr(text_y, 0, inserted_password);
+            }
+            None => {}
+        }
     }
 }
