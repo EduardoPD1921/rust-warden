@@ -12,7 +12,6 @@ pub struct UI {
 
 
 impl UI {
-
 	pub fn new(window: Window) -> Self {
 		Self { window, credential_name: None, credential_user: None, credential_password: None }
 	}
@@ -28,7 +27,9 @@ impl UI {
     pub fn create_credential_mode(&mut self) {
         self.window.clear();
 
-        self.insert_credential_name_screen();
+        self.insert_credential_parameter("name", 0);
+        self.insert_credential_parameter("user", 1);
+        self.insert_credential_parameter("password", 2);
         self.window.getch();
     }
     
@@ -80,12 +81,33 @@ impl UI {
         self.window.mvaddstr(max_y_terminal, 49, "[q: exit]");
     }
 
-    fn insert_credential_name_screen(&mut self) {
-        let mut credential_name_arr: Vec<char> = Vec::new();
+    fn insert_credential_parameter(&mut self, parameter: &str, y_pos: i32) {
+        let mut credential_parameter_arr: Vec<char> = Vec::new();
+        let action_desc = format!("Insert your credential {}:", parameter);
 
-        self.window.mvaddstr(0, 0, "Insert your credential name:");
-        self.window.mv(1, 0);
+        self.window.mvaddstr(y_pos, 0, action_desc);
+        self.window.mv(y_pos + 1, 0);
 
+        let credential_parameter = self.get_user_input_data(&mut credential_parameter_arr, parameter);
+
+        match parameter {
+            "name" => {
+                self.credential_name = Some(credential_parameter);
+            }
+            "user" => {
+                self.credential_user = Some(credential_parameter);
+            }
+            "password" => {
+                self.credential_password = Some(credential_parameter);
+            }
+            _ => {}
+        }
+
+        self.window.clear();
+        self.draw_inserted_parameters();
+    }
+
+    fn get_user_input_data(&self, arr: &mut Vec<char>, parameter_name: &str) -> String {
         loop {
             let user_input = self.await_user_input();
 
@@ -94,11 +116,15 @@ impl UI {
                     break;
                 }
                 Input::Character(c) => {
-                    self.window.addch(c);
-                    credential_name_arr.push(c);
+                    if parameter_name == "password" {
+                        self.window.addch('*');
+                    } else {
+                        self.window.addch(c);
+                    }
+                    arr.push(c);
                 }
                 Input::KeyBackspace => {
-                    credential_name_arr.pop();
+                    arr.pop();
                     self.window.mv(self.window.get_cur_y(), self.window.get_cur_x() - 1);
                     self.window.delch();
                 }
@@ -106,9 +132,7 @@ impl UI {
             }
         }
 
-        let credential_name = credential_name_arr.iter().collect();
-        self.credential_name = Some(credential_name);
-        self.draw_inserted_parameters();
+        arr.iter().collect()
     }
 
     fn draw_inserted_parameters(&self) {
