@@ -7,13 +7,13 @@ pub struct UI {
 	window: Window,
     credential_name: Option<String>,
     credential_user: Option<String>,
-    credential_password: Option<String>
+    credential_password: Option<String>,
+    show_password: bool
 }
-
 
 impl UI {
 	pub fn new(window: Window) -> Self {
-		Self { window, credential_name: None, credential_user: None, credential_password: None }
+		Self { window, credential_name: None, credential_user: None, credential_password: None, show_password: false }
 	}
 
 	pub fn init(&self, credentials_arr: &mut Vec<Credential>) {
@@ -158,7 +158,18 @@ impl UI {
 
         match &self.credential_password {
             Some(p) => {
-                let inserted_password = format!("Credential password: {}", p);
+                let password = if self.show_password {
+                    p.to_owned()
+                } else {
+                    let mut hidden_password_arr: Vec<char> = Vec::new();
+                    for _c in p.chars() {
+                        hidden_password_arr.push('*');
+                    }
+
+                    hidden_password_arr.iter().collect()
+                };
+
+                let inserted_password = format!("Credential password: {}", password);
                 self.window.mvaddstr(text_y, 0, inserted_password);
             }
             None => {}

@@ -9,8 +9,8 @@ fn main() {
     
     let mut credentials_arr: Vec<Credential> = Vec::new();
     
+    ui.init(&mut credentials_arr);
     loop {
-        ui.init(&mut credentials_arr);
         let user_input = ui.await_user_input();
 
         match user_input {
