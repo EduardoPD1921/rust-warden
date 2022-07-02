@@ -1,6 +1,8 @@
 use pancurses::{noecho, Window, Input};
-use std::fs::{self};
+use std::fs;
 use std::path::Path;
+
+use rand::{thread_rng, Rng};
 
 use super::credentials::Credential;
 pub struct UI {
@@ -29,7 +31,7 @@ impl UI {
 
         self.insert_credential_parameter("name", 0);
         self.insert_credential_parameter("user", 1);
-        self.insert_credential_parameter("password", 2);
+        self.insert_credential_password();
         self.window.getch();
     }
     
@@ -82,6 +84,8 @@ impl UI {
     }
 
     fn insert_credential_parameter(&mut self, parameter: &str, y_pos: i32) {
+        self.draw_inserted_parameters();
+        
         let mut credential_parameter_arr: Vec<char> = Vec::new();
         let action_desc = format!("Insert your credential {}:", parameter);
 
@@ -103,8 +107,25 @@ impl UI {
             _ => {}
         }
 
-        self.window.clear();
         self.draw_inserted_parameters();
+    }
+
+    fn insert_credential_password(&mut self) {
+        self.window.mvaddstr(2, 0, "Do you want a generated password? [y] or [n]");
+
+        loop {
+            let user_input = self.await_user_input();
+
+            match user_input {
+                Input::Character('n') => {
+                    self.insert_credential_parameter("password", 2);
+                }
+                Input::Character('y') => {
+                    self.generate_password();
+                }
+                _ => {}
+            }
+        }
     }
 
     fn get_user_input_data(&self, arr: &mut Vec<char>, parameter_name: &str) -> String {
@@ -136,6 +157,8 @@ impl UI {
     }
 
     fn draw_inserted_parameters(&self) {
+        self.window.clear();
+
         let mut text_y = 0;
 
         match &self.credential_name {
@@ -174,5 +197,25 @@ impl UI {
             }
             None => {}
         }
+    }
+
+    fn generate_password(&mut self) {
+        const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZ\
+                            abcdefghijklmnopqrstuvwxyz\
+                            0123456789)(*&^%$#@!~";
+        const PASSWORD_LEN: usize = 15;
+        let mut rng = thread_rng();
+
+        let password: String = (0..PASSWORD_LEN)
+            .map(|_| {
+                let idx = rng.gen_range(0..CHARSET.len());
+                CHARSET[idx] as char
+            })
+            .collect();
+
+        self.credential_password = Some(password);
+
+        self.window.clear();
+        self.draw_inserted_parameters();
     }
 }
