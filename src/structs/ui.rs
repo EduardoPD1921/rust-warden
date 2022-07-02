@@ -13,6 +13,9 @@ pub struct UI {
     show_password: bool
 }
 
+// TODO: 
+// - put all loop interfaces into a separate file
+
 impl UI {
 	pub fn new(window: Window) -> Self {
 		Self { window, credential_name: None, credential_user: None, credential_password: None, show_password: false }
@@ -156,7 +159,7 @@ impl UI {
         arr.iter().collect()
     }
 
-    fn draw_inserted_parameters(&self) {
+    fn draw_inserted_parameters(&mut self) {
         self.window.clear();
 
         let mut text_y = 0;
@@ -194,6 +197,18 @@ impl UI {
 
                 let inserted_password = format!("Credential password: {}", password);
                 self.window.mvaddstr(text_y, 0, inserted_password);
+
+                loop {
+                    let user_input = self.await_user_input();
+
+                    match user_input {
+                        Input::Character('t') => {
+                            self.show_password = !self.show_password;
+                            self.draw_inserted_parameters();
+                        }
+                        _ => {}
+                    }
+                }
             }
             None => {}
         }
