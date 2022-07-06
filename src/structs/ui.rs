@@ -197,11 +197,20 @@ impl UI {
 
                 let inserted_password = format!("Credential password: {}", password);
                 self.window.mvaddstr(text_y, 0, inserted_password);
+                self.draw_finish_screen_controls();
 
                 loop {
                     let user_input = self.await_user_input();
 
                     match user_input {
+                        Input::Character('\n') => {
+                            let owned_name = self.credential_name.as_ref().unwrap().to_owned();
+                            let owned_user = self.credential_user.as_ref().unwrap().to_owned();
+                            let owned_password = self.credential_password.as_ref().unwrap().to_owned();
+
+                            let credential = Credential::new(owned_name, owned_user, owned_password);
+                            credential.save_to_file();
+                        }
                         Input::Character('t') => {
                             self.show_password = !self.show_password;
                             self.draw_inserted_parameters();
@@ -212,6 +221,11 @@ impl UI {
             }
             None => {}
         }
+    }
+
+    fn draw_finish_screen_controls(&self) {
+        self.window.mvaddstr(self.window.get_max_y() - 1, 0, "[Enter: save credential]");
+        self.window.mvaddstr(self.window.get_max_y() - 1, 25, "[t: toggle password visibility]");
     }
 
     fn generate_password(&mut self) {
