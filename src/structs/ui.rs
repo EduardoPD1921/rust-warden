@@ -1,15 +1,20 @@
-use pancurses::{noecho, Window, Input};
+use pancurses::{noecho, Window, Input, COLOR_PAIR, start_color, init_pair, COLOR_WHITE, COLOR_BLACK};
 use std::fs;
 use std::path::Path;
 
 use rand::{thread_rng, Rng};
 
 use super::credentials::Credential;
+
+const REGULAR_PAIR: i16 = 0;
+const HIGHLIGHTED_PAIR: i16 = 1;
 pub struct UI {
 	window: Window,
     credential_name: Option<String>,
     credential_user: Option<String>,
     credential_password: Option<String>,
+    cursor_y_index: i32,
+    qtd_credentials: i32,
     show_password: bool
 }
 
@@ -18,13 +23,25 @@ pub struct UI {
 
 impl UI {
 	pub fn new(window: Window) -> Self {
-		Self { window, credential_name: None, credential_user: None, credential_password: None, show_password: false }
+		Self { window, 
+            cursor_y_index: 0,
+            qtd_credentials: 0, 
+            credential_name: None, 
+            credential_user: None, 
+            credential_password: None, 
+            show_password: false 
+        }
 	}
 
 	pub fn init(&mut self) {
 		self.window.keypad(true);
 		noecho();
 
+        start_color();
+        init_pair(REGULAR_PAIR, COLOR_WHITE, COLOR_BLACK);
+        init_pair(HIGHLIGHTED_PAIR, COLOR_BLACK, COLOR_WHITE);
+
+        self.qtd_credentials = 0;
         self.credential_name = None;
         self.credential_user = None;
         self.credential_password = None;
@@ -46,11 +63,23 @@ impl UI {
 		user_input
 	}
 
+    pub fn move_cursor_up(&mut self) {
+        if self.cursor_y_index > 0 {
+            self.cursor_y_index -= 1;
+        }
+    }
+
+    pub fn move_cursor_down(&mut self) {
+        if self.cursor_y_index < self.qtd_credentials - 1 {
+            self.cursor_y_index += 1;
+        }
+    }
+
     fn move_cursor_max(&self) {
         self.window.mv(self.window.get_max_y() - 1, self.window.get_max_x() - 1);
     }
 
-	fn draw_vaults_menu(&self) {
+	fn draw_vaults_menu(&mut self) {
         self.window.clear();
 
         let mut credentials_arr: Vec<Credential> = Vec::new();
@@ -68,6 +97,7 @@ impl UI {
 
                 let credential = Credential::new(credential_name, credential_user, credential_password);
                 credentials_arr.push(credential);
+                self.qtd_credentials += 1;
 			}
 		}
 
@@ -77,7 +107,11 @@ impl UI {
 			self.window.mvaddstr(1, 0, "None credentials have been found.");
 		} else {
 			for (index, item) in credentials_arr.iter().enumerate() {
-				self.window.mvaddstr((index + 1) as i32, 0, &item.name);
+                let pair_style = if self.cursor_y_index == index as i32 { HIGHLIGHTED_PAIR as u32 } else { REGULAR_PAIR as u32 };
+    
+                self.window.attron(COLOR_PAIR(pair_style));
+                self.window.mvaddstr((index + 1) as i32, 0, &item.name);
+                self.window.attroff(COLOR_PAIR(pair_style));
 			}
 		}
 
@@ -88,9 +122,9 @@ impl UI {
     fn draw_controls(&self) {
         let max_y_terminal = self.window.get_max_y() - 1;
 
-        self.window.mvaddstr(max_y_terminal, 0, "[w a s d: navigation]");
-        self.window.mvaddstr(max_y_terminal, 22, "[i: insert new credential]");
-        self.window.mvaddstr(max_y_terminal, 49, "[q: exit]");
+        self.window.mvaddstr(max_y_terminal, 0, "[w s: navigation]");
+        self.window.mvaddstr(max_y_terminal, 18, "[i: insert new credential]");
+        self.window.mvaddstr(max_y_terminal, 45, "[q: exit]");
     }
 
     fn insert_credential_parameter(&mut self, parameter: &str, y_pos: i32) {

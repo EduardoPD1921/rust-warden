@@ -10,6 +10,12 @@ fn main() {
         let user_input = ui.await_user_input();
 
         match user_input {
+            Input::Character('w') => {
+                ui.move_cursor_up();
+            }
+            Input::Character('s') => {
+                ui.move_cursor_down();
+            }
             Input::Character('q') => {
                 break;
             }
