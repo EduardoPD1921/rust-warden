@@ -21,12 +21,15 @@ impl UI {
 		Self { window, credential_name: None, credential_user: None, credential_password: None, show_password: false }
 	}
 
-	pub fn init(&self, credentials_arr: &mut Vec<Credential>) {
-        self.window.clear();
+	pub fn init(&mut self) {
 		self.window.keypad(true);
 		noecho();
 
-		self.draw_vaults_menu(credentials_arr);
+        self.credential_name = None;
+        self.credential_user = None;
+        self.credential_password = None;
+
+		self.draw_vaults_menu();
 	}
 
     pub fn create_credential_mode(&mut self) {
@@ -35,7 +38,7 @@ impl UI {
         self.insert_credential_parameter("name", 0);
         self.insert_credential_parameter("user", 1);
         self.insert_credential_password();
-        self.window.getch();
+
     }
     
     pub fn await_user_input(&self) -> Input {
@@ -47,7 +50,11 @@ impl UI {
         self.window.mv(self.window.get_max_y() - 1, self.window.get_max_x() - 1);
     }
 
-	fn draw_vaults_menu(&self, credentials_arr: &mut Vec<Credential>) {
+	fn draw_vaults_menu(&self) {
+        self.window.clear();
+
+        let mut credentials_arr: Vec<Credential> = Vec::new();
+
 		let is_credentials_file_created = Path::new("credentials.txt").exists();
 		if is_credentials_file_created {
 			let file_buf = fs::read_to_string("credentials.txt").unwrap();
@@ -122,9 +129,11 @@ impl UI {
             match user_input {
                 Input::Character('n') => {
                     self.insert_credential_parameter("password", 2);
+                    break;
                 }
                 Input::Character('y') => {
                     self.generate_password();
+                    break;
                 }
                 _ => {}
             }
@@ -210,10 +219,13 @@ impl UI {
 
                             let credential = Credential::new(owned_name, owned_user, owned_password);
                             credential.save_to_file();
+
+                            break;
                         }
                         Input::Character('t') => {
                             self.show_password = !self.show_password;
                             self.draw_inserted_parameters();
+                            break;
                         }
                         _ => {}
                     }
@@ -226,6 +238,8 @@ impl UI {
     fn draw_finish_screen_controls(&self) {
         self.window.mvaddstr(self.window.get_max_y() - 1, 0, "[Enter: save credential]");
         self.window.mvaddstr(self.window.get_max_y() - 1, 25, "[t: toggle password visibility]");
+
+        self.move_cursor_max();
     }
 
     fn generate_password(&mut self) {
