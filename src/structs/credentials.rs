@@ -4,8 +4,8 @@ use std::path::Path;
 
 pub struct Credential {
     pub name: String,
-    user: String,
-    password: String
+    pub user: String,
+    pub password: String
 }
 
 impl Credential {

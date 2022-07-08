@@ -13,6 +13,7 @@ pub struct UI {
     credential_name: Option<String>,
     credential_user: Option<String>,
     credential_password: Option<String>,
+    credentials_arr: Vec<Credential>,
     cursor_y_index: i32,
     qtd_credentials: i32,
     show_password: bool
@@ -25,7 +26,8 @@ impl UI {
 	pub fn new(window: Window) -> Self {
 		Self { window, 
             cursor_y_index: 0,
-            qtd_credentials: 0, 
+            qtd_credentials: 0,
+            credentials_arr: Vec::new(), 
             credential_name: None, 
             credential_user: None, 
             credential_password: None, 
@@ -41,6 +43,7 @@ impl UI {
         init_pair(REGULAR_PAIR, COLOR_WHITE, COLOR_BLACK);
         init_pair(HIGHLIGHTED_PAIR, COLOR_BLACK, COLOR_WHITE);
 
+        self.credentials_arr = Vec::new();
         self.qtd_credentials = 0;
         self.credential_name = None;
         self.credential_user = None;
@@ -75,14 +78,34 @@ impl UI {
         }
     }
 
+    pub fn show_selected_credential(&self) {
+        let selected_credential = &self.credentials_arr[self.cursor_y_index as usize];
+
+        let credential_title = format!("{}:", selected_credential.name);
+        let user_title = format!("User: {}", selected_credential.user);
+        let password_title = format!("Password: {}", selected_credential.password);
+
+        self.window.clear();
+        self.window.mvaddstr(0, 0, credential_title);
+        self.window.mvaddstr(2, 0, user_title);
+        self.window.mvaddstr(3, 0, password_title);
+        self.draw_show_credential_menu();
+
+        self.move_cursor_max();
+
+        self.await_user_input();
+    }
+
     fn move_cursor_max(&self) {
         self.window.mv(self.window.get_max_y() - 1, self.window.get_max_x() - 1);
     }
 
+    fn draw_show_credential_menu(&self) {
+        self.window.mvaddstr(self.window.get_max_y() - 1, 0, "[w s: navigation] [c: copy] [e: edit]");
+    }
+
 	fn draw_vaults_menu(&mut self) {
         self.window.clear();
-
-        let mut credentials_arr: Vec<Credential> = Vec::new();
 
 		let is_credentials_file_created = Path::new("credentials.txt").exists();
 		if is_credentials_file_created {
@@ -96,17 +119,17 @@ impl UI {
 				let credential_password = chunk.next().unwrap().to_string();
 
                 let credential = Credential::new(credential_name, credential_user, credential_password);
-                credentials_arr.push(credential);
+                self.credentials_arr.push(credential);
                 self.qtd_credentials += 1;
 			}
 		}
 
 		self.window.mvaddstr(0, 0, "Vault:");
 
-		if credentials_arr.is_empty() {
+		if self.credentials_arr.is_empty() {
 			self.window.mvaddstr(1, 0, "None credentials have been found.");
 		} else {
-			for (index, item) in credentials_arr.iter().enumerate() {
+			for (index, item) in self.credentials_arr.iter().enumerate() {
                 let pair_style = if self.cursor_y_index == index as i32 { HIGHLIGHTED_PAIR as u32 } else { REGULAR_PAIR as u32 };
     
                 self.window.attron(COLOR_PAIR(pair_style));
@@ -122,9 +145,11 @@ impl UI {
     fn draw_controls(&self) {
         let max_y_terminal = self.window.get_max_y() - 1;
 
-        self.window.mvaddstr(max_y_terminal, 0, "[w s: navigation]");
-        self.window.mvaddstr(max_y_terminal, 18, "[i: insert new credential]");
-        self.window.mvaddstr(max_y_terminal, 45, "[q: exit]");
+        self.window.mvaddstr(
+            max_y_terminal,
+            0,
+            "[w s: navigation] [i: insert new credential] [q: exit]"
+        );
     }
 
     fn insert_credential_parameter(&mut self, parameter: &str, y_pos: i32) {
@@ -270,8 +295,11 @@ impl UI {
     }
 
     fn draw_finish_screen_controls(&self) {
-        self.window.mvaddstr(self.window.get_max_y() - 1, 0, "[Enter: save credential]");
-        self.window.mvaddstr(self.window.get_max_y() - 1, 25, "[t: toggle password visibility]");
+        self.window.mvaddstr(
+            self.window.get_max_y() - 1,
+            0,
+            "[enter: save credential] [t: toggle password visibility]"
+        );
 
         self.move_cursor_max();
     }

@@ -16,11 +16,14 @@ fn main() {
             Input::Character('s') => {
                 ui.move_cursor_down();
             }
-            Input::Character('q') => {
-                break;
-            }
             Input::Character('i') => {
                 ui.create_credential_mode();
+            }
+            Input::Character('\n') => {
+                ui.show_selected_credential();
+            }
+            Input::Character('q') => {
+                break;
             }
             _ => {}
         }
